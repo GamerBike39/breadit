@@ -28,6 +28,7 @@ model Account {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId])
 }
 
 model Session {
@@ -36,6 +37,8 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model User {
@@ -44,9 +47,115 @@ model User {
   email         String?   @unique
   emailVerified DateTime?
 
-  username String? @unique
+  username          String?     @unique
+  createdSubReddits SubReddit[] @relation("CreatedBy")
 
-  image    String?
-  accounts Account[]
-  sessions Session[]
+  image        String?
+  accounts     Account[]
+  sessions     Session[]
+  Post         Post[]
+  Comment      Comment[]
+  CommentVote  CommentVote[]
+  Vote         Vote[]
+  Subscription Subscription[]
+}
+
+model SubReddit {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  posts     Post[]
+
+  creatorId   String?
+  Creator     User?          @relation("CreatedBy", fields: [creatorId], references: [id])
+  subscribers Subscription[]
+
+  @@index([name])
+  @@index([creatorId])
+}
+
+model Subscription {
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  subReddit   SubReddit @relation(fields: [subRedditId], references: [id])
+  subRedditId String
+
+  @@id([userId, subRedditId])
+  @@index([userId])
+  @@index([subRedditId])
+}
+
+model Post {
+  id          String     @id @default(cuid())
+  title       String
+  content     Json?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  subReddit   SubReddit? @relation(fields: [subRedditId], references: [id])
+  subRedditId String
+
+  author   User   @relation(fields: [authorId], references: [id])
+  authorId String
+
+  comments Comment[]
+  votes    Vote[]
+
+  @@index([subRedditId])
+  @@index([authorId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  text      String
+  createdAt DateTime @default(now())
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  String
+  post      Post     @relation(fields: [postId], references: [id])
+  postId    String
+
+  replyToId String?
+  replyTo   Comment?  @relation("ReplyTo", fields: [replyToId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  replies   Comment[] @relation("ReplyTo")
+
+  votes CommentVote[]
+
+  commentId String?
+
+  @@index([postId])
+  @@index([authorId])
+  @@index([replyToId])
+}
+
+enum VoteType {
+  UP
+  DOWN
+}
+
+model CommentVote {
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  comment   Comment  @relation(fields: [commentId], references: [id])
+  commentId String
+  type      VoteType
+
+  @@id([userId, commentId])
+  @@index([commentId])
+  @@index([userId])
+}
+
+model Vote {
+  user   User     @relation(fields: [userId], references: [id])
+  userId String
+  post   Post     @relation(fields: [postId], references: [id])
+  postId String
+  type   VoteType
+
+  @@id([userId, postId])
+  @@index([postId])
+  @@index([userId])
 }
