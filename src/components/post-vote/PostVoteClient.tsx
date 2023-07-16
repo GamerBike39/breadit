@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils'
 import { useCustomToast } from '@/hooks/useCustomToast'
 import { toast } from '../ui/use-toast'
 
+
 interface PostVoteClientProps {
   postId: string
   initialVotesAmt: number
@@ -107,6 +108,7 @@ const PostVoteClient = ({
             'text-emerald-500 fill-emerald-500': currentVote === 'UP',
           })}
         />
+      
       </Button>
 
       {/* Score */}
