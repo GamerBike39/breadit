@@ -19,6 +19,105 @@ interface PostVoteClientProps {
   initialVote?: VoteType
 }
 
+// const PostVoteClient = ({
+//   postId,
+//   initialVotesAmt,
+//   initialVote,
+// }: PostVoteClientProps) => {
+//   const { loginToast } = useCustomToast()
+//   const [votesAmt, setVotesAmt] = useState<number>(initialVotesAmt)
+//   const [currentVote, setCurrentVote] = useState(initialVote)
+//   const prevVote = usePrevious(currentVote)
+
+//   // ensure sync with server
+//   useEffect(() => {
+//     setCurrentVote(initialVote)
+//   }, [initialVote])
+
+//   const { mutate: vote } = useMutation({
+//     mutationFn: async (type: VoteType) => {
+//       const payload: PostVoteRequest = {
+//         voteType: type,
+//         postId: postId,
+//       }
+
+//       await axios.patch('/api/subreddit/post/vote', payload)
+//     },
+//     onError: (err, voteType) => {
+//       if (voteType === 'UP') setVotesAmt((prev) => prev - 1)
+//       else if(voteType === 'DOWN') setVotesAmt((prev) => prev + 1)
+
+//       // reset current vote
+//       setCurrentVote(prevVote)
+
+//       if (err instanceof AxiosError) {
+//         if (err.response?.status === 401) {
+//           return loginToast()
+//         }
+//       }
+
+//       return toast({
+//         title: 'Something went wrong.',
+//         description: 'Your vote was not registered. Please try again.',
+//         variant: 'destructive',
+//       })
+//     },
+//     onMutate: (type: VoteType) => {
+//       if (currentVote === type) {
+//         // User is voting the same way again, so remove their vote
+//         setCurrentVote(undefined)
+//         if (type === 'UP') setVotesAmt((prev) => prev - 1)
+//         else if (type === 'DOWN') setVotesAmt((prev) => prev + 1)
+//       } else {
+//         // User is voting in the opposite direction, so subtract 2
+//         setCurrentVote(type)
+//         if (type === 'UP') setVotesAmt((prev) => prev + (currentVote ? 2 : 1))
+//         else if (type === 'DOWN')
+//           setVotesAmt((prev) => prev - (currentVote ? 2 : 1))
+//       }
+//     },
+//   })
+
+//   return (
+//     <div className='flex flex-col gap-4 sm:gap-0 pr-6 sm:w-20 pb-4 sm:pb-0'>
+//       {/* upvote */}
+//       <Button
+//         onClick={() => vote('UP')}
+//         size='sm'
+//         variant='ghost'
+//         aria-label='upvote'>
+//         <ArrowBigUp
+//           className={cn('h-5 w-5 text-zinc-700', {
+//             'text-emerald-500 fill-emerald-500': currentVote === 'UP',
+//           })}
+//         />
+//       </Button>
+
+//       {/* score */}
+//       <p className='text-center py-2 font-medium text-sm text-zinc-900'>
+//         {votesAmt}
+//       </p>
+
+//       {/* downvote */}
+//       <Button
+//         onClick={() => vote('DOWN')}
+//         size='sm'
+//         className={cn({
+//           'text-emerald-500': currentVote === 'DOWN',
+//         })}
+//         variant='ghost'
+//         aria-label='downvote'>
+//         <ArrowBigDown
+//           className={cn('h-5 w-5 text-zinc-700', {
+//             'text-red-500 fill-red-500': currentVote === 'DOWN',
+//           })}
+//         />
+//       </Button>
+//     </div>
+//   )
+// }
+
+
 const PostVoteClient = ({
   postId,
   initialVotesAmt,
@@ -28,13 +127,14 @@ const PostVoteClient = ({
   const [votesAmt, setVotesAmt] = useState<number>(initialVotesAmt)
   const [currentVote, setCurrentVote] = useState(initialVote)
   const prevVote = usePrevious(currentVote)
+  const [isVoting, setIsVoting] = useState(false)
 
-  // ensure sync with server
+  // Assurez-vous de la synchronisation avec le serveur
   useEffect(() => {
     setCurrentVote(initialVote)
   }, [initialVote])
 
-  const { mutate: vote } = useMutation({
+  const { mutate: vote, isLoading } = useMutation({
     mutationFn: async (type: VoteType) => {
       const payload: PostVoteRequest = {
         voteType: type,
@@ -45,9 +145,9 @@ const PostVoteClient = ({
     },
     onError: (err, voteType) => {
       if (voteType === 'UP') setVotesAmt((prev) => prev - 1)
-      else if(voteType === 'DOWN') setVotesAmt((prev) => prev + 1)
+      else if (voteType === 'DOWN') setVotesAmt((prev) => prev + 1)
 
-      // reset current vote
+      // Réinitialisez le vote actuel
       setCurrentVote(prevVote)
 
       if (err instanceof AxiosError) {
@@ -57,35 +157,50 @@ const PostVoteClient = ({
       }
 
       return toast({
-        title: 'Something went wrong.',
-        description: 'Your vote was not registered. Please try again.',
+        title: 'Quelque chose s\'est mal passé.',
+        description: 'Votre vote n\'a pas été enregistré. Veuillez réessayer.',
         variant: 'destructive',
       })
     },
-    onMutate: (type: VoteType) => {
-      if (currentVote === type) {
-        // User is voting the same way again, so remove their vote
-        setCurrentVote(undefined)
-        if (type === 'UP') setVotesAmt((prev) => prev - 1)
-        else if (type === 'DOWN') setVotesAmt((prev) => prev + 1)
-      } else {
-        // User is voting in the opposite direction, so subtract 2
-        setCurrentVote(type)
-        if (type === 'UP') setVotesAmt((prev) => prev + (currentVote ? 2 : 1))
-        else if (type === 'DOWN')
-          setVotesAmt((prev) => prev - (currentVote ? 2 : 1))
+    onMutate: async (type: VoteType) => {
+      if (isVoting || isLoading) return // Empêche les votes simultanés multiples ou pendant le chargement
+
+      setIsVoting(true)
+
+      try {
+        if (currentVote === type) {
+          // L'utilisateur vote de la même manière, donc supprimez son vote
+          setCurrentVote(undefined)
+          if (type === 'UP') setVotesAmt((prev) => prev - 1)
+          else if (type === 'DOWN') setVotesAmt((prev) => prev + 1)
+        } else {
+          // L'utilisateur vote dans la direction opposée, donc soustrayez 2
+          setCurrentVote(type)
+          if (type === 'UP') setVotesAmt((prev) => prev + (currentVote ? 2 : 1))
+          else if (type === 'DOWN')
+            setVotesAmt((prev) => prev - (currentVote ? 2 : 1))
+        }
+
+        // Effectuer la requête API
+        await vote(type)
+      } catch (error) {
+        // Gérer l'erreur
+      } finally {
+        setIsVoting(false)
       }
     },
   })
 
   return (
     <div className='flex flex-col gap-4 sm:gap-0 pr-6 sm:w-20 pb-4 sm:pb-0'>
-      {/* upvote */}
+      {/* Bouton d'upvote */}
       <Button
         onClick={() => vote('UP')}
         size='sm'
         variant='ghost'
-        aria-label='upvote'>
+        aria-label='upvote'
+        disabled={isLoading} // Désactiver le bouton pendant le chargement
+      >
         <ArrowBigUp
           className={cn('h-5 w-5 text-zinc-700', {
             'text-emerald-500 fill-emerald-500': currentVote === 'UP',
@@ -93,12 +208,12 @@ const PostVoteClient = ({
         />
       </Button>
 
-      {/* score */}
+      {/* Score */}
       <p className='text-center py-2 font-medium text-sm text-zinc-900'>
         {votesAmt}
       </p>
 
-      {/* downvote */}
+      {/* Bouton de downvote */}
       <Button
         onClick={() => vote('DOWN')}
         size='sm'
@@ -106,7 +221,9 @@ const PostVoteClient = ({
           'text-emerald-500': currentVote === 'DOWN',
         })}
         variant='ghost'
-        aria-label='downvote'>
+        aria-label='downvote'
+        disabled={isLoading} // Désactiver le bouton pendant le chargement
+      >
         <ArrowBigDown
           className={cn('h-5 w-5 text-zinc-700', {
             'text-red-500 fill-red-500': currentVote === 'DOWN',
@@ -116,5 +233,8 @@ const PostVoteClient = ({
     </div>
   )
 }
+
+
+
 
 export default PostVoteClient
