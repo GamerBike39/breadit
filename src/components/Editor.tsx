@@ -153,7 +153,7 @@ const Editor: FC<EditorProps> = ({ subRedditId }) => {
         onError : (err) => {
             toast({
                 title : 'Something went wrong',
-                description : 'Please try again later',
+                description : 'Maybe, you are not joined to this community ? Or try again later.',
                 variant : 'destructive',
             });
         },
