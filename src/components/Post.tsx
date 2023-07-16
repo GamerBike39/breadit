@@ -1,9 +1,11 @@
 import { formatTimeToNow } from '@/lib/utils';
 import { Post, User, Vote } from '@prisma/client';
-import { MessageSquare } from 'lucide-react';
+import { Edit, MessageSquare } from 'lucide-react';
 import { FC, useRef } from 'react';
 import EditorOutput from './EditorOutput';
 import PostVoteClient from './post-vote/PostVoteClient';
+import { useSession } from 'next-auth/react';
+import Link from 'next/link';
 
 type PartialVote = Pick<Vote, 'type'>
 
@@ -23,12 +25,15 @@ const Post: FC<PostProps> = ({ subredditName, post, commentAmt, votesAmt : votes
 
     const pRef = useRef<HTMLDivElement>(null)
 
+    const {data : session} = useSession()
+    
+
   return (
    <div className='rounded-md bg-white shadow'>
     <div className='px-6 py-4 flex justify-between'>
         {/* TODO : PostVotes */}
         <PostVoteClient initialVotesAmt={votesAmt} postId={post.id} initialVote={currentVote?.type} />
-        <div className='w-0 flex-1'>
+        <div className='w-0 flex-1 relative'>
             <div className='max-h-40 mt-1 text-xs text-gray-500'>
                 {subredditName ? (
                     <>
@@ -41,6 +46,18 @@ const Post: FC<PostProps> = ({ subredditName, post, commentAmt, votesAmt : votes
                 <span>Posted by u/{post.author.name}</span>
                 <span className='px-1'>•</span>
                 {formatTimeToNow(new Date(post.createdAt))}
+    
+                    {/* TODO a btn for edit post */}
+                    {/* this button is visible uniquely if this is the author of post */}
+                    {session?.user.id === post.authorId ? 
+                    (
+                    <Link className='absolute -right-3 -top-1 md:right-0 md:top-0  z-10' href={`/r/${subredditName}/edit/${post.id}`}>
+                         <Edit className='w-3 h-3 md:w-6 md:h-6'/>
+                    </Link>
+                    ) : null}
+                
+            
+            
             </div>
             <a href={`/r/${subredditName}/post/${post.id}`}>
                 <h1 className='text-lg font-semibold py-2 leading-6 text-zinc-900'>{post.title}</h1>
