@@ -1,7 +1,9 @@
 import EditEditor from "@/components/EditEditor";
 import { Button } from "@/components/ui/Button";
+import { getAuthSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { notFound } from "next/navigation";
+
 
 interface pageProps {
  params: {  
@@ -15,16 +17,22 @@ const page= async ({ params } : pageProps) => {
     const content = await db.post.findFirst({
         where: {
             id: params.id,
-
         },
         
     });
 
+    const user = await getAuthSession();
+    
+
     if(!content) {
+        return notFound();
+    }
+  
+    if(content.authorId !== user?.user?.id) {
         return notFound();
     }  
 
-   
+  
   return (
    <div className="flex flex-col items-start gap-6">
        <div className="border-b border-gray-200 pb-5">
@@ -34,6 +42,7 @@ const page= async ({ params } : pageProps) => {
                 </h3>
                 <p className="ml-2 mt-1 truncate text-sm text-gray-500">
                   {content?.authorId}
+                  -- {user?.user?.id}
                 </p>
             </div>
        </div>
@@ -48,7 +57,7 @@ const page= async ({ params } : pageProps) => {
         </div>
 
    </div>
-   );
+   )
 }
 
 export default page;
