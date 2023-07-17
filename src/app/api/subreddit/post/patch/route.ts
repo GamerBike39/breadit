@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import {z} from 'zod';
 import { PostValidator } from "@/lib/validators/post";
 
-export async function PATCH(req : Request){
+export async function POST(req : Request){
     try {
         const session = await getAuthSession()
 
@@ -13,7 +13,7 @@ export async function PATCH(req : Request){
 
         const body = await req.json()
 
-        const {subRedditId, title, content} = PostValidator.parse(body)
+        const {subRedditId, title, content, postId} = PostValidator.parse(body)
 
         const subscriptionExists = await db.subscription.findFirst({
             where: {
@@ -28,7 +28,7 @@ export async function PATCH(req : Request){
 
         await db.post.update({
             where: {
-                id: subRedditId
+                id : postId
             },
             data: {
                 title,
@@ -38,7 +38,7 @@ export async function PATCH(req : Request){
             }
         })
 
-        return new Response('updated', {status: 200})
+        return new Response('Subscribed', {status: 200})
 
     } catch (error) {
         if (error instanceof z.ZodError) {

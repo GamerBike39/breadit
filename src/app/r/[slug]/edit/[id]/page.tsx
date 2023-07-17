@@ -15,17 +15,14 @@ const page= async ({ params } : pageProps) => {
     const content = await db.post.findFirst({
         where: {
             id: params.id,
+
         },
         
     });
 
     if(!content) {
         return notFound();
-    }
-
-    content.authorId = content.authorId.toString();
-
-    
+    }  
 
    
   return (
@@ -42,7 +39,7 @@ const page= async ({ params } : pageProps) => {
        </div>
 
         {/* form */}
-        <EditEditor  />
+        <EditEditor postId={content.id} title={content.title} content={content.content} subRedditId={content.subRedditId}/>
 
         <div className="flex w-full justify-end">
             <Button type="submit" className="w-full" form="subreddit-post-form">

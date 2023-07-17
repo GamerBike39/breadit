@@ -5,7 +5,6 @@ import { FC, useRef } from 'react';
 import EditorOutput from './EditorOutput';
 import PostVoteClient from './post-vote/PostVoteClient';
 import { useSession } from 'next-auth/react';
-import Link from 'next/link';
 
 type PartialVote = Pick<Vote, 'type'>
 
@@ -51,9 +50,9 @@ const Post: FC<PostProps> = ({ subredditName, post, commentAmt, votesAmt : votes
                     {/* this button is visible uniquely if this is the author of post */}
                     {session?.user.id === post.authorId ? 
                     (
-                    <Link className='absolute -right-3 -top-1 md:right-0 md:top-0  z-10' href={`/r/${subredditName}/edit/${post.id}`}>
+                    <a className='absolute -right-3 -top-1 md:right-0 md:top-0  z-10' href={`/r/${subredditName}/edit/${post.id}`}>
                          <Edit className='w-3 h-3 md:w-6 md:h-6'/>
-                    </Link>
+                    </a>
                     ) : null}
                 
             
