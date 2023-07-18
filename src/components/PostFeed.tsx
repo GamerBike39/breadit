@@ -12,10 +12,10 @@ import { useSession } from 'next-auth/react'
 
 interface PostFeedProps {
   initialPosts: ExtendedPost[]
-  subredditName?: string
+  subRedditName?: string
 }
 
-const PostFeed: FC<PostFeedProps> = ({ initialPosts, subredditName }) => {
+const PostFeed: FC<PostFeedProps> = ({ initialPosts, subRedditName }) => {
   const lastPostRef = useRef<HTMLElement>(null)
   const { ref, entry } = useIntersection({
     root: lastPostRef.current,
@@ -28,7 +28,7 @@ const PostFeed: FC<PostFeedProps> = ({ initialPosts, subredditName }) => {
     async ({ pageParam = 1 }) => {
       const query =
         `/api/posts?limit=${INFINITE_SCROLLING_PAGINATION_RESULTS}&page=${pageParam}` +
-        (!!subredditName ? `&subredditName=${subredditName}` : '')
+        (!!subRedditName ? `&subredditName=${subRedditName}` : '')
 
       const { data } = await axios.get(query)
       return data as ExtendedPost[]

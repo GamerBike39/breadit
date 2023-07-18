@@ -40,17 +40,17 @@ const page = async ({ params } : PageProps) => {
     }
 
     // if subreddit.name has a dash, replace it with a space
-     if(subreddit.name.includes('-')) {
-            subreddit.name = subreddit.name.replace('-', ' ')                           
-    }
+    const subredditNameDashLess = subreddit.name.replace('-', ' ')
 
   return (
    <>
        <h1 className="font-bold text-3xl md:text-4xl h-14">
-              r/{subreddit.name}
+              r/{subredditNameDashLess}
        </h1>
        <MiniCreatePost  session={session}/>
-       <PostFeed initialPosts={subreddit.posts} subredditName={subreddit.name}/>
+
+       <PostFeed initialPosts={subreddit.posts} subRedditName={subreddit.name}/>
+        
    </>
    );
 }

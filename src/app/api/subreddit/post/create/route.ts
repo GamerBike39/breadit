@@ -31,7 +31,7 @@ export async function POST(req : Request){
                 title,
                 content,
                 subRedditId,
-                authorId: session.user.id
+                authorId: session.user.id,
             }
         })
 

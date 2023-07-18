@@ -13,5 +13,5 @@ export const CommentVoteValidator = z.object({
     voteType: z.enum(['UP', 'DOWN'])
 })
 
-export type CommentVoteRequest = z.infer<typeof PostVoteValidator>
+export type CommentVoteRequest = z.infer<typeof CommentVoteValidator>
 

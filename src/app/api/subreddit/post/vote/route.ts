@@ -62,7 +62,7 @@ export async function PATCH(req: Request) {
 
         if (votesAmt >= CACHE_AFTER_UPVOTES) {
           const cachePayload: CachedPost = {
-            authorUsername: post.author.username ?? '',
+            authorUsername: post.author.name ?? '',
             content: JSON.stringify(post.content),
             id: post.id,
             title: post.title,
@@ -98,7 +98,7 @@ export async function PATCH(req: Request) {
 
       if (votesAmt >= CACHE_AFTER_UPVOTES) {
         const cachePayload: CachedPost = {
-          authorUsername: post.author.username ?? '',
+          authorUsername: post.author.name ?? '',
           content: JSON.stringify(post.content),
           id: post.id,
           title: post.title,
@@ -109,7 +109,7 @@ export async function PATCH(req: Request) {
         await redis.hset(`post:${postId}`, cachePayload) // Store the post data as a hash
       }
 
-      return new Response('OK')
+      return new Response('OK2')
     }
 
     // if no existing vote, create a new vote
@@ -120,6 +120,22 @@ export async function PATCH(req: Request) {
         postId,
       },
     })
+    // await db.vote.upsert({
+    //   where: {
+    //     userId_postId: {
+    //       postId,
+    //       userId: session.user.id,
+    //     },
+    //   },
+    //   create: {
+    //     type: voteType,
+    //     userId: session.user.id,
+    //     postId,
+    //   },
+    //   update: {
+    //     type: voteType,
+    //   },
+    // })
 
     // Recount the votes
     const votesAmt = post.votes.reduce((acc, vote) => {
@@ -130,7 +146,7 @@ export async function PATCH(req: Request) {
 
     if (votesAmt >= CACHE_AFTER_UPVOTES) {
       const cachePayload: CachedPost = {
-        authorUsername: post.author.username ?? '',
+        authorUsername: post.author.name ?? '',
         content: JSON.stringify(post.content),
         id: post.id,
         title: post.title,
@@ -154,3 +170,4 @@ export async function PATCH(req: Request) {
     )
   }
 }
+

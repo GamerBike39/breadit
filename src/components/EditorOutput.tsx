@@ -1,3 +1,5 @@
+'use client';
+
 import dynamic from 'next/dynamic';
 import { FC } from 'react';
 import Image from 'next/image';
@@ -32,7 +34,7 @@ function CustomImageRenderer({ data } : any) {
 
   return (
     <div className='relative w-full min-h-[15rem]'>
-      <Image src={src} alt="image" fill className="object-contain" />
+      <Image src={src} alt="image" fill className="object-contain" sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" priority />
     </div>
   )
 }

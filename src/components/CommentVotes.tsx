@@ -2,47 +2,44 @@
 
 
 
-import { PostVoteRequest } from '@/lib/validators/vote'
+import { useCustomToast } from '@/hooks/useCustomToast'
+import { cn } from '@/lib/utils'
+import { CommentVoteRequest } from '@/lib/validators/vote'
 import { usePrevious } from '@mantine/hooks'
-import { VoteType } from '@prisma/client'
+import { VoteType, CommentVote } from '@prisma/client'
 import { useMutation } from '@tanstack/react-query'
 import axios, { AxiosError } from 'axios'
-import { useEffect, useState } from 'react'
-import { Button } from '../ui/Button'
 import { ArrowBigDown, ArrowBigUp } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { useCustomToast } from '@/hooks/useCustomToast'
-import { toast } from '../ui/use-toast'
+import { useState } from 'react'
+import { Button } from './ui/Button'
+import { toast } from './ui/use-toast'
 
-interface PostVoteClientProps {
-  postId: string
+type PartialVote = Pick<CommentVote, 'type'>
+
+interface CommentVoteProps {
+ commentId: string
   initialVotesAmt: number
-  initialVote?: VoteType
+  initialVote?: PartialVote
 }
 
-const PostVoteClient = ({
-  postId,
+const CommentVote = ({
+ commentId,
   initialVotesAmt,
   initialVote,
-}: PostVoteClientProps) => {
+}: CommentVoteProps) => {
   const { loginToast } = useCustomToast()
   const [votesAmt, setVotesAmt] = useState<number>(initialVotesAmt)
   const [currentVote, setCurrentVote] = useState(initialVote)
   const prevVote = usePrevious(currentVote)
 
-  // Assurez-vous de la synchronisation avec le serveur
-  useEffect(() => {
-    setCurrentVote(initialVote)
-  }, [initialVote])
-
   const { mutate: vote, isLoading } = useMutation({
-    mutationFn: async (type: VoteType) => {
-      const payload: PostVoteRequest = {
-        voteType: type,
-        postId: postId,
+    mutationFn: async (voteType: VoteType) => {
+      const payload:CommentVoteRequest = {
+        voteType,
+        commentId
       }
 
-      await axios.patch('/api/subreddit/post/vote', payload)
+      await axios.patch('/api/subreddit/post/comment/vote', payload)
     },
     onError: (err, voteType) => {
       if (voteType === 'UP') setVotesAmt((prev) => prev - 1)
@@ -63,15 +60,15 @@ const PostVoteClient = ({
         variant: 'destructive',
       })
     },
-    onMutate: (type: VoteType) => {
-      if (currentVote === type) {
+    onMutate: (type) => {
+      if (currentVote?.type === type) {
         // User is voting the same way again, so remove their vote
         setCurrentVote(undefined)
         if (type === 'UP') setVotesAmt((prev) => prev - 1)
         else if (type === 'DOWN') setVotesAmt((prev) => prev + 1)
       } else {
         // User is voting in the opposite direction, so subtract 2
-        setCurrentVote(type)
+        setCurrentVote({type})
         if (type === 'UP') setVotesAmt((prev) => prev + (currentVote ? 2 : 1))
         else if (type === 'DOWN')
           setVotesAmt((prev) => prev - (currentVote ? 2 : 1))
@@ -80,7 +77,7 @@ const PostVoteClient = ({
   })
 
   return (
-    <div className='flex flex-col gap-4 sm:gap-0 pr-6 sm:w-20 pb-4 sm:pb-0'>
+    <div className='flex gap-1'>
       {/* Bouton d'upvote */}
       <Button
         onClick={() => vote('UP')}
@@ -91,7 +88,7 @@ const PostVoteClient = ({
       >
         <ArrowBigUp
           className={cn('h-5 w-5 text-zinc-700', {
-            'text-emerald-500 fill-emerald-500': currentVote === 'UP',
+            'text-emerald-500 fill-emerald-500': currentVote?.type === 'UP',
           })}
         />
       </Button>
@@ -106,7 +103,7 @@ const PostVoteClient = ({
         onClick={() => vote('DOWN')}
         size='sm'
         className={cn({
-          'text-emerald-500': currentVote === 'DOWN',
+          'text-emerald-500': currentVote?.type === 'DOWN',
         })}
         variant='ghost'
         aria-label='downvote'
@@ -114,7 +111,7 @@ const PostVoteClient = ({
       >
         <ArrowBigDown
           className={cn('h-5 w-5 text-zinc-700', {
-            'text-red-500 fill-red-500': currentVote === 'DOWN',
+            'text-red-500 fill-red-500': currentVote?.type === 'DOWN',
           })}
         />
       </Button>
@@ -122,4 +119,4 @@ const PostVoteClient = ({
   )
 }
 
-export default PostVoteClient
+export default CommentVote
